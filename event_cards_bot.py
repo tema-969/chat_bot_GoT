@@ -3,6 +3,7 @@ import random
 import time
 import os
 from dotenv import load_dotenv
+from retry import retry
 from PIL import Image
 import io
 
@@ -10,8 +11,37 @@ import io
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
+# Инициализация бота
+bot = telebot.TeleBot(TOKEN)
 # Максимальное количество попыток для отправки сообщений
 MAX_RETRIES = 5
+
+@retry(telebot.apihelper.ApiTelegramException, tries=5, delay=2, backoff=2)
+def safe_send_message(bot, chat_id, text):
+    while True:
+        try:
+            bot.send_message(chat_id, text)
+            break
+        except telebot.apihelper.ApiTelegramException as e:
+            if e.result_json['error_code'] == 429:
+                retry_after = int(e.result_json['parameters']['retry_after'])
+                print(f"Too many requests. Sleeping for {retry_after} seconds.")
+                time.sleep(retry_after)
+            else:
+                raise e
+
+@bot.message_handler(commands=['next'])
+def handle_next_round(message):
+    play_round(message)
+
+def play_round(message):
+    safe_send_message(bot, message.chat.id, "Введите /next, чтобы перейти к следующему раунду.")
+
+if __name__ == '__main__':
+    try:
+        bot.polling(interval=3, timeout=10, none_stop=True)
+    except KeyboardInterrupt:
+        print("Bot stopped by user")
 
 # Функция для отправки сообщений с повторной попыткой
 def send_message_with_retry(chat_id, text):
@@ -31,8 +61,21 @@ def send_message_with_retry(chat_id, text):
             else:
                 time.sleep(2)  # Пауза перед повторной попыткой
 
-# Инициализация бота
-bot = telebot.TeleBot(TOKEN)
+def safe_send_message(bot, chat_id, text):
+    while True:
+        try:
+            bot.send_message(chat_id, text)
+            break
+        except telebot.apihelper.ApiTelegramException as e:
+            if e.result_json['error_code'] == 429:
+                retry_after = int(e.result_json['parameters']['retry_after'])
+                print(f"Too many requests. Sleeping for {retry_after} seconds.")
+                time.sleep(retry_after)
+            else:
+                raise e
+
+def play_round(message):
+    safe_send_message(bot, message.chat.id, "Введите /next, чтобы перейти к следующему раунду.")
 
 # Список всех возможных событий
 events = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "46", "48", "48", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62"]
