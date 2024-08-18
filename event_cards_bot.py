@@ -10,6 +10,27 @@ import io
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
+# Максимальное количество попыток для отправки сообщений
+MAX_RETRIES = 5
+
+# Функция для отправки сообщений с повторной попыткой
+def send_message_with_retry(chat_id, text):
+    for attempt in range(MAX_RETRIES):
+        try:
+            bot.send_message(chat_id, text)
+            break
+        except telebot.apihelper.ApiTelegramException as e:
+            if e.description == "Too Many Requests: retry after X":
+                retry_after = int(str(e).split()[-1])
+                time.sleep(retry_after + 1)
+            else:
+                raise e
+        except Exception as e:
+            if attempt == MAX_RETRIES - 1:
+                raise e
+            else:
+                time.sleep(2)  # Пауза перед повторной попыткой
+
 # Инициализация бота
 bot = telebot.TeleBot(TOKEN)
 
