@@ -33,19 +33,6 @@ def send_message_with_retry(chat_id, text):
             else:
                 time.sleep(2)  # Пауза перед повторной попыткой
 
-def safe_send_message(bot, chat_id, text):
-    while True:
-        try:
-            bot.send_message(chat_id, text)
-            break
-        except telebot.apihelper.ApiTelegramException as e:
-            if e.result_json['error_code'] == 429:
-                retry_after = int(e.result_json['parameters']['retry_after'])
-                print(f"Too many requests. Sleeping for {retry_after} seconds.")
-                time.sleep(retry_after)
-            else:
-                raise e
-
 def play_round(message):
     safe_send_message(bot, message.chat.id, "Введите /next, чтобы перейти к следующему раунду.")
 
@@ -109,8 +96,7 @@ def play_round(message):
     else:
         bot.reply_to(message, "Введите /next, чтобы перейти к следующему раунду.")
         round_count += 1
-
-# Функция для отображения событий раунда
+    # Функция для отображения событий раунда
 def display_events(message):
     global current_round_events
     for event in current_round_events:
