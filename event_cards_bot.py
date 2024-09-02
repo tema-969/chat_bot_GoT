@@ -36,14 +36,20 @@ def send_message_with_retry(chat_id, text):
 def play_round(message):
     safe_send_message(bot, message.chat.id, "Введите /next, чтобы перейти к следующему раунду.")
 
-# Список всех возможных событий
-events = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "46", "48", "48", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62"]
+events_1 = ["1"]
+
+events_2 = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"]
+
+events_3 = ["26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"]
 
 # Количество раундов
 num_rounds = 10
 
 # Глобальные переменные для игры
-available_events = []
+# available_events = []
+available_events_1 = []
+available_events_2 = []
+available_events_3 = []
 round_count = 0
 game_active = False
 current_round_events = []
@@ -60,8 +66,10 @@ def compress_image(image_path):
 # Функция для начала игры
 @bot.message_handler(commands=['start'])
 def start_game(message):
-    global available_events, round_count, game_active, current_round_events
-    available_events = events.copy()
+    global available_events_1, available_events_2, available_events_3, round_count, game_active, current_round_events
+    available_events_1 = events_1.copy()
+    available_events_2 = events_2.copy()
+    available_events_3 = events_3.copy()
     random.shuffle(available_events)
     round_count = 1
     game_active = True
@@ -80,14 +88,17 @@ def play_round(message):
     # Обнуление текущих событий
     current_round_events = []
 
-    # Добавляем уникальные события в текущий раунд
-    while len(current_round_events) < min(3, len(available_events)):
-        new_event = random.choice(available_events)
-        if new_event not in current_round_events:
-            current_round_events.append(new_event)
-            available_events.remove(new_event)
+    # Проверка, доступны ли события в каждом из списков
+    if available_events_1 and available_events_2 and available_events_3:
+        # Берем события из каждого списка
+        event_1 = available_events_1.pop(0)  # Берем первое событие из списка 1
+        event_2 = random.choice(available_events_2)  # Берем любое событие из списка 2
+        event_3 = random.choice(available_events_3)  # Берем любое событие из списка 3
+        
+        # Объединяем их в текущие события
+        current_round_events.extend([event_1, event_2, event_3])
 
-    display_events(message)
+        display_events(message)
 
     # Проверяем, остались ли раунды
     if round_count == num_rounds:
